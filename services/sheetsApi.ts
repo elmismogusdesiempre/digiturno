@@ -1,38 +1,29 @@
 export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe7ITluadbR-zkzaSivMoFL98nNDmQbUQd_s010hTmutTzIt-66YpPnz76FpyTrZAp/exec"; // Mantén las comillas
 export const sheetsAPI = {
-  // Función para agregar ticket
   async addTicket(nombre: string, servicio: string) {
     try {
-      // Usamos un formato de URL que Google entiende sin problemas de seguridad (CORS)
-      const urlConDatos = `${SCRIPT_URL}?action=addTicket&nombre=${encodeURIComponent(nombre)}&servicio=${encodeURIComponent(servicio)}`;
+      const url = `${SCRIPT_URL}?action=addTicket&nombre=${encodeURIComponent(nombre)}&servicio=${encodeURIComponent(servicio)}`;
       
-      await fetch(urlConDatos, {
+      // Usamos fetch en modo no-cors para evitar bloqueos
+      await fetch(url, {
         method: 'POST',
-        mode: 'no-cors'
+        mode: 'no-cors',
       });
       
-      console.log("Petición enviada a Google para:", nombre);
       return { success: true };
     } catch (error) {
-      console.error("Error en sheetsAPI.addTicket:", error);
+      console.error("Error en la API:", error);
       return { success: false };
     }
   },
 
-  // Función para llamar siguiente
-  async callNext(box_id: string | number) {
+  async getState() {
     try {
-      const urlConDatos = `${SCRIPT_URL}?action=callNext&box_id=${encodeURIComponent(box_id)}`;
-      
-      await fetch(urlConDatos, {
-        method: 'POST',
-        mode: 'no-cors'
-      });
-      
-      return { success: true };
+      const response = await fetch(SCRIPT_URL);
+      return await response.json();
     } catch (error) {
-      console.error("Error en sheetsAPI.callNext:", error);
-      return { success: false };
+      console.error("Error obteniendo datos:", error);
+      return null;
     }
   }
 };
