@@ -1,3 +1,4 @@
+import { addTicket } from '../services/sheetsApi';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ServiceType } from '../types';
@@ -28,14 +29,25 @@ const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBac
     }
   }, []);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!name || !idNum) return;
-    
-    onRegister(name, service, idNum);
-    
-    setSubmitted(`${service.charAt(0).toUpperCase()}-XXX`);
-    
+const handleSubmit = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  if (!name || !idNum) return;
+
+  try {
+    const result = await addTicket({
+      nombre: name,
+      servicio: service,
+      tipo: idNum
+    });
+
+    // turno REAL que viene del Google Sheet
+    setSubmitted(result.turno);
+
+  } catch (error) {
+    alert('No fue posible generar el turno. Intenta nuevamente.');
+  }
+};
+
     // Resetear y re-enfocar después de 3 segundos
     setTimeout(() => {
       setSubmitted(null);
