@@ -1,4 +1,4 @@
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbzUL6JcWzT4JNegeqxbBuoM0gHLdUBHT_z7Ft7WsShXyHkVdC65og5zPf5Dv_t2rM-Z/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbz9pDbzhpZ4YvpssB6oWUXscLlX505cHvSuDQpROURbNjKPwCNa7bWb5IJ8Sq4dZxdp/exec';
 
 async function post(data: any) {
   const res = await fetch(BASE_URL, {
