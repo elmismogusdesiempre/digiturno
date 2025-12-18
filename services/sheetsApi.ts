@@ -1,33 +1,36 @@
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbz9pDbzhpZ4YvpssB6oWUXscLlX505cHvSuDQpROURbNjKPwCNa7bWb5IJ8Sq4dZxdp/exec';
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6aKydOyH8QyvrAmlrKN1uZSGltkMU8nD0G26OYKhLShEmn63xe3h43JL51t0PoLuR/exec";
 
-async function post(data: any) {
-  const res = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  return res.json();
-}
+export const sheetsAPI = {
+  // Obtener todos los datos
+  async getState() {
+    const res = await fetch(SCRIPT_URL);
+    return await res.json();
+  },
 
-export async function getState() {
-  const res = await fetch(`${BASE_URL}?action=getState`);
-  return res.json();
-}
+  // Crear un nuevo ticket
+  async addTicket(nombre: string, servicio: string) {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Importante para evitar errores de CORS con Google
+      body: JSON.stringify({
+        action: 'addTicket',
+        nombre,
+        servicio
+      })
+    });
+    return res;
+  },
 
-export async function addTicket(payload: {
-  nombre: string;
-  servicio: string;
-  tipo: string;
-}) {
-  return post({
-    action: 'addTicket',
-    ...payload
-  });
-}
-
-export async function callNext(box: number) {
-  return post({
-    action: 'callNext',
-    box
-  });
-}
+  // Llamar al siguiente turno (desde el panel del box)
+  async callNext(box_id: string | number) {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        action: 'callNext',
+        box_id
+      })
+    });
+    return res;
+  }
+};
