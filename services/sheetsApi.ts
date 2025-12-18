@@ -1,4 +1,4 @@
-export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6aKydOyH8QyvrAmlrKN1uZSGltkMU8nD0G26OYKhLShEmn63xe3h43JL51t0PoLuR/exec"; // Mantén las comillas
+export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe7ITluadbR-zkzaSivMoFL98nNDmQbUQd_s010hTmutTzIt-66YpPnz76FpyTrZAp/exec"; // Mantén las comillas
 export const sheetsAPI = {
   // Función para agregar ticket
   async addTicket(nombre: string, servicio: string) {
