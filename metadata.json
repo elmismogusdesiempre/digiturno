@@ -1,0 +1,5 @@
+{
+  "name": "DigiTurno AI",
+  "description": "A modern, AI-powered Queue Management System (Digiturno) featuring split-screen displays, multi-box operator consoles, and Gemini-powered content generation for signage.",
+  "requestFramePermissions": []
+}
