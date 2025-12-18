@@ -1,5 +1,5 @@
 export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe7ITluadbR-zkzaSivMoFL98nNDmQbUQd_s010hTmutTzIt-66YpPnz76FpyTrZAp/exec"; // Mantén las comillas
-export const sheetsAPI = {
+export const sheetsApi = {
   async addTicket(nombre: string, servicio: string) {
     try {
       const url = `${SCRIPT_URL}?action=addTicket&nombre=${encodeURIComponent(nombre)}&servicio=${encodeURIComponent(servicio)}`;
