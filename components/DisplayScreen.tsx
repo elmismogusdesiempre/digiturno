@@ -28,7 +28,7 @@ const getEmbedUrl = (url: string): string => {
     } else if (url.includes('youtu.be/')) {
       videoId = url.split('youtu.be/')[1].split('?')[0];
     }
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=0&controls=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&loop=0&controls=0&modestbranding=1`;
   }
   if (url.includes('vimeo.com')) {
     const parts = url.split('/');
