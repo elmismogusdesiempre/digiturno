@@ -17,7 +17,7 @@ interface DisplayScreenProps {
 }
 
 // URL DE TU BASE DE DATOS (GOOGLE APPS SCRIPT)
-const API_URL = "Thttps://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec";
 
 const getEmbedUrl = (url: string): string => {
   if (!url) return "";
