@@ -155,43 +155,29 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
   useEffect(() => {
    const syncWithDB = async () => {
   try {
-    const timestamp = new Date().getTime();
+    // Asegúrate de que API_URL empiece con https:// (SIN LA T)
+    const response = await fetch(`${API_URL}?sheet=display`, {
+      method: 'GET',
+      redirect: 'follow'
+    });
     
-    // Usamos un proxy gratuito para saltar el bloqueo de CORS
-    // Esto hace que la petición parezca venir de un servidor y no del navegador
-    const proxyUrl = "https://corsproxy.io/?"; 
-    const targetUrl = encodeURIComponent(`${API_URL}?sheet=display&cb=${timestamp}`);
-
-    const response = await fetch(proxyUrl + targetUrl);
-    
-    if (!response.ok) throw new Error('Error en red');
-
     const data = await response.json();
     
-    if (data && Array.isArray(data)) {
-      const formattedTickets = data
-        .filter(item => item.ticket_id) 
-        .map((item: any) => ({
-          id: String(item.ticket_id),
-          number: String(item.ticket_id),
-          customerName: String(item.nombre || 'En espera'),
-          boxId: String(item.box || '-'),
-          timestamp: String(item.called_at || '')
-        }));
+    if (data && Array.isArray(data) && data.length > 0) {
+      const formattedTickets = data.map((item: any) => ({
+        id: String(item.ticket_id),
+        number: String(item.ticket_id),
+        customerName: String(item.nombre || 'En espera'),
+        boxId: String(item.box || '-'),
+        timestamp: String(item.called_at || '')
+      }));
 
       setLiveTickets(formattedTickets);
     }
   } catch (error) {
     console.error("Error de conexión:", error);
-    // Si el proxy falla, intentamos la conexión directa como plan B
-    try {
-        const directRes = await fetch(`${API_URL}?sheet=display`);
-        const directData = await directRes.json();
-        if (directData) setLiveTickets(directData);
-    } catch (e) {}
   }
 };
-
 
     
     const interval = setInterval(syncWithDB, 3000);
