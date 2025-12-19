@@ -1,3 +1,48 @@
+// 1. Definimos la URL de tu API (la que ya probamos)
+const API_URL = "https://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec";
+
+// 2. Dentro de tu componente DisplayScreen:
+const [ultimoIdAnunciado, setUltimoIdAnunciado] = useState(null);
+
+useEffect(() => {
+  const consultarNovedades = async () => {
+    try {
+      // Pedimos los datos de la hoja 'display'
+      const response = await fetch(`${API_URL}?sheet=display`);
+      const datos = await response.json();
+
+      if (datos && datos.length > 0) {
+        const turnoActual = datos[0]; // El primer registro es el más reciente
+
+        // 3. LA CLAVE: ¿Es un turno nuevo?
+        if (turnoActual.ticket_id !== ultimoIdAnunciado) {
+          
+          // Solo si es la primera vez que lo vemos, ejecutamos la acción:
+          console.log("¡Nuevo turno detectado!", turnoActual.nombre);
+          
+          // AQUÍ VA TU LÓGICA DE AUDIO (Ya la tienes definida en tu app):
+          // - Sonar Beep
+          // - Ejecutar TTS (Voz)
+          // - Activar parpadeo visual
+          
+          // 4. Actualizamos el estado para no repetir el anuncio
+          setUltimoIdAnunciado(turnoActual.ticket_id);
+        }
+      }
+    } catch (error) {
+      console.error("Error conectando con la DB:", error);
+    }
+  };
+
+  // Consultar cada 3000 milisegundos (3 segundos)
+  const intervalo = setInterval(consultarNovedades, 3000);
+
+  // Limpiar el intervalo si se cierra la pantalla
+  return () => clearInterval(intervalo);
+}, [ultimoIdAnunciado]);
+
+
+
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Ticket, Slide, RssFeedConfig, ClockConfig, TickerLineConfig, PlaylistItem } from '../types';
