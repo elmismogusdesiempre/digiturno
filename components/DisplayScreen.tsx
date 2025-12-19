@@ -153,27 +153,33 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
 
   // POLLING: Consultar la DB cada 3 segundos
   useEffect(() => {
-    const syncWithDB = async () => {
-      try {
-        const response = await fetch(`${API_URL}?sheet=display`);
-        const data = await response.json();
-        
-        if (data && Array.isArray(data)) {
-          // Mapeamos los datos de Google Sheets al formato de objeto Ticket de la App
-          const formattedTickets: Ticket[] = data.map((item: any) => ({
-            id: item.ticket_id.toString(),
-            number: item.ticket_id.toString(),
-            customerName: item.nombre,
-            boxId: item.box.toString(),
-            timestamp: item.called_at
-          }));
-
-          setLiveTickets(formattedTickets);
-        }
-      } catch (error) {
-        console.error("Error de sincronización:", error);
-      }
-    };
+   const syncWithDB = async () => {
+  try {
+    // Añadimos parámetros para evitar el bloqueo y seguir la redirección de Google
+    const response = await fetch(`${API_URL}?sheet=display`, {
+      method: 'GET',
+      mode: 'cors', // Forzamos modo CORS
+      redirect: 'follow' // ¡ESTO ES LO MÁS IMPORTANTE!
+    });
+    
+    if (!response.ok) throw new Error('Respuesta no exitosa');
+    
+    const data = await response.json();
+    
+    if (data && Array.isArray(data)) {
+      const formattedTickets: Ticket[] = data.map((item: any) => ({
+        id: item.ticket_id.toString(),
+        number: item.ticket_id.toString(),
+        customerName: item.nombre,
+        boxId: item.box.toString(),
+        timestamp: item.called_at
+      }));
+      setLiveTickets(formattedTickets);
+    }
+  } catch (error) {
+    console.error("Error de sincronización:", error);
+  }
+};
 
     const interval = setInterval(syncWithDB, 3000);
     return () => clearInterval(interval);
