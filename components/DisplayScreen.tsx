@@ -1,55 +1,9 @@
-// 1. Definimos la URL de tu API (la que ya probamos)
-const API_URL = "https://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec";
-
-// 2. Dentro de tu componente DisplayScreen:
-const [ultimoIdAnunciado, setUltimoIdAnunciado] = useState(null);
-
-useEffect(() => {
-  const consultarNovedades = async () => {
-    try {
-      // Pedimos los datos de la hoja 'display'
-      const response = await fetch(`${API_URL}?sheet=display`);
-      const datos = await response.json();
-
-      if (datos && datos.length > 0) {
-        const turnoActual = datos[0]; // El primer registro es el más reciente
-
-        // 3. LA CLAVE: ¿Es un turno nuevo?
-        if (turnoActual.ticket_id !== ultimoIdAnunciado) {
-          
-          // Solo si es la primera vez que lo vemos, ejecutamos la acción:
-          console.log("¡Nuevo turno detectado!", turnoActual.nombre);
-          
-          // AQUÍ VA TU LÓGICA DE AUDIO (Ya la tienes definida en tu app):
-          // - Sonar Beep
-          // - Ejecutar TTS (Voz)
-          // - Activar parpadeo visual
-          
-          // 4. Actualizamos el estado para no repetir el anuncio
-          setUltimoIdAnunciado(turnoActual.ticket_id);
-        }
-      }
-    } catch (error) {
-      console.error("Error conectando con la DB:", error);
-    }
-  };
-
-  // Consultar cada 3000 milisegundos (3 segundos)
-  const intervalo = setInterval(consultarNovedades, 3000);
-
-  // Limpiar el intervalo si se cierra la pantalla
-  return () => clearInterval(intervalo);
-}, [ultimoIdAnunciado]);
-
-
-
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Ticket, Slide, RssFeedConfig, ClockConfig, TickerLineConfig, PlaylistItem } from '../types';
 import { Megaphone, Home, Bell } from 'lucide-react';
 
 interface DisplayScreenProps {
-  calledTickets: Ticket[];
+  calledTickets: Ticket[]; // Se mantiene por compatibilidad inicial
   tickerLines: TickerLineConfig[];
   tickerMode: 'scrolling' | 'slides' | 'rss';
   slides: Slide[];
@@ -61,6 +15,9 @@ interface DisplayScreenProps {
   videoPlaylist: PlaylistItem[];
   onBack: () => void;
 }
+
+// URL DE TU BASE DE DATOS (GOOGLE APPS SCRIPT)
+const API_URL = "TU_URL_DE_APPS_SCRIPT";
 
 const getEmbedUrl = (url: string): string => {
   if (!url) return "";
@@ -180,10 +137,12 @@ const hexToRgb = (hex: string) => {
 }
 
 const DisplayScreen: React.FC<DisplayScreenProps> = ({ 
-  calledTickets, tickerLines, tickerMode, slides, rssFeeds, clockConfig, imagePlaylist, displayMode, mapUrl, videoPlaylist, onBack
+  calledTickets: initialTickets, tickerLines, tickerMode, slides, rssFeeds, clockConfig, imagePlaylist, displayMode, mapUrl, videoPlaylist, onBack
 }) => {
-  const currentTicket = calledTickets.length > 0 ? calledTickets[0] : null;
-  const historyTickets = calledTickets.slice(1, 4);
+  // --- NUEVA LÓGICA DE SINCRONIZACIÓN ---
+  const [liveTickets, setLiveTickets] = useState<Ticket[]>(initialTickets);
+  const currentTicket = liveTickets.length > 0 ? liveTickets[0] : null;
+  const historyTickets = liveTickets.slice(1, 4);
 
   const [flash, setFlash] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -191,6 +150,35 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const timeoutRef = useRef<number | null>(null);
+
+  // POLLING: Consultar la DB cada 3 segundos
+  useEffect(() => {
+    const syncWithDB = async () => {
+      try {
+        const response = await fetch(`${https://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec}?sheet=display`);
+        const data = await response.json();
+        
+        if (data && Array.isArray(data)) {
+          // Mapeamos los datos de Google Sheets al formato de objeto Ticket de la App
+          const formattedTickets: Ticket[] = data.map((item: any) => ({
+            id: item.ticket_id.toString(),
+            number: item.ticket_id.toString(),
+            customerName: item.nombre,
+            boxId: item.box.toString(),
+            timestamp: item.called_at
+          }));
+
+          setLiveTickets(formattedTickets);
+        }
+      } catch (error) {
+        console.error("Error de sincronización:", error);
+      }
+    };
+
+    const interval = setInterval(syncWithDB, 3000);
+    return () => clearInterval(interval);
+  }, []);
+  // ---------------------------------------
 
   const speakFemaleVoice = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -215,6 +203,7 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
+  // Disparar anuncio cuando cambia el ID del ticket actual
   useEffect(() => {
     if (currentTicket) {
       setFlash(true);
@@ -239,32 +228,24 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
     }
   }, [tickerMode, slides.length]);
 
-  // Playlist Rotations (Images)
   useEffect(() => {
     if (displayMode === 'image' && imagePlaylist.length > 1) {
         const currentItem = imagePlaylist[currentImageIndex];
-        // Ensure duration is at least 5 seconds, default to 15s if missing
         const duration = (currentItem?.duration || 15) * 1000;
-        
         const timer = setTimeout(() => {
             setCurrentImageIndex(prev => (prev + 1) % imagePlaylist.length);
         }, duration);
-        
         return () => clearTimeout(timer);
     }
   }, [displayMode, imagePlaylist, currentImageIndex]);
 
-  // Playlist Rotations (Videos)
   useEffect(() => {
     if (displayMode === 'video' && videoPlaylist.length > 1) {
         const currentItem = videoPlaylist[currentVideoIndex];
-        // Default to 60s if missing
         const duration = (currentItem?.duration || 60) * 1000;
-
         const timer = setTimeout(() => {
             setCurrentVideoIndex(prev => (prev + 1) % videoPlaylist.length);
         }, duration);
-        
         return () => clearTimeout(timer);
     }
   }, [displayMode, videoPlaylist, currentVideoIndex]);
@@ -311,10 +292,8 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
         </button>
       </div>
 
-      {/* REGIÓN SUPERIOR (70%) */}
       <div className="flex w-full h-[70vh] bg-black overflow-hidden border-b border-indigo-600/20">
         
-        {/* MULTIMEDIA */}
         <div className="w-[70vw] h-full relative border-r border-slate-800 bg-slate-950">
           {displayMode === 'image' && (
               <div key={displayImageUrl} className="w-full h-full animate-in fade-in duration-1000">
@@ -340,10 +319,8 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
           {clockConfig && <ClockWidget config={clockConfig} />}
         </div>
 
-        {/* COLUMNA DERECHA DE TURNOS */}
         <div className="w-[30vw] h-full flex flex-col bg-white overflow-hidden shadow-2xl z-10">
           
-          {/* ATENDIENDO AHORA - TÍTULO ACTUALIZADO */}
           <div className={`flex-[4] flex flex-col items-center justify-center p-8 transition-all duration-700 ${flash ? 'bg-indigo-600' : 'bg-white'}`}>
              <h2 className={`text-2xl font-black uppercase tracking-[0.2em] mb-10 flex items-center gap-3 ${flash ? 'text-white' : 'text-slate-800'}`}>
                 <Bell className={`w-7 h-7 ${flash ? 'text-indigo-200' : 'text-indigo-500'}`} /> ATENDIENDO AHORA
@@ -365,7 +342,6 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
              )}
           </div>
 
-          {/* HISTORIAL - DISEÑO UNA SOLA LÍNEA */}
           <div className="flex-[4] bg-slate-50/40 p-8 border-t border-slate-100 overflow-hidden">
              <h3 className="text-2xl font-black text-slate-800 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
                 <Megaphone className="w-7 h-7 text-indigo-500" /> HISTORIAL
@@ -373,18 +349,11 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
              <div className="space-y-4">
                {historyTickets.map((t) => (
                  <div key={t.id} className="flex items-center p-4 bg-white rounded-3xl shadow-sm border border-slate-100 gap-4 hover:bg-slate-50 transition-all">
-                    {/* TURNO */}
                     <span className="text-3xl font-black text-slate-900 tracking-tighter shrink-0 w-24 text-center">{t.number}</span>
-                    
-                    {/* SEPARADOR */}
                     <div className="w-px h-10 bg-slate-200 shrink-0"></div>
-
-                    {/* NOMBRE */}
                     <span className="flex-1 text-2xl font-black text-indigo-600 uppercase truncate text-center leading-none">
                         {t.customerName}
                     </span>
-
-                    {/* MÓDULO */}
                     <div className="shrink-0">
                         <span className="text-[11px] font-black text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-slate-200 whitespace-nowrap">
                             MÓD {t.boxId}
@@ -397,7 +366,6 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
         </div>
       </div>
 
-      {/* REGIÓN INFERIOR (30%) - 3 LÍNEAS INDEPENDIENTES */}
       <div className="h-[30vh] w-full bg-white flex flex-col overflow-hidden border-t-8 border-indigo-600">
         {tickerMode === 'scrolling' && (
            <div className="w-full h-full flex flex-col">
