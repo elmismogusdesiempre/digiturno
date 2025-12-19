@@ -30,25 +30,26 @@ const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBac
   }, []);
 
 const handleSubmit = async (e?: React.FormEvent) => {
-  // 1. Evita que la página se recargue y borre todo
   if (e) e.preventDefault();
-
-  console.log("Iniciando envío para:", name);
+  
+  // ALERTA 1: ¿El botón está vivo?
+  alert("Paso 1: ¡El botón funciona!"); 
+  console.log("Datos a enviar:", { name, idNum });
 
   try {
-    // 2. Llamamos a nuestra API (asegúrate de que el nombre coincida: sheetsApi)
+    // ALERTA 2: ¿La API está siendo llamada?
+    console.log("Paso 2: Llamando a sheetsApi...");
+    
+    // USAMOS EL NOMBRE EXACTO QUE TIENES: sheetsApi
     await sheetsApi.addTicket(name, "General"); 
     
-    console.log("¡Envío completado!");
-    alert("Turno obtenido con éxito");
-    
-    // Opcional: Limpiar los campos después de enviar
-    // setName("");
-    // setIdNum("");
+    // ALERTA 3: ¿Terminó el proceso?
+    alert("Paso 3: ¡Proceso terminado! Revisa el Sheets ahora.");
     
   } catch (error) {
-    console.error("Error al obtener turno:", error);
-    alert("Hubo un error al conectar con el servidor");
+    // ALERTA 4: ¿Hubo un error de código?
+    alert("ERROR CRÍTICO: " + error);
+    console.error(error);
   }
 };
 
