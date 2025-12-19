@@ -206,13 +206,6 @@ const handleSubmit = async (e?: React.FormEvent) => {
                 </div>
             </div>
 
-            <button 
-            type="submit" 
-            onClick={() => handleSubmit()}
-            disabled={!name || !idNum}
-            className={`w-full py-6 mt-4 rounded-2xl font-black text-3xl uppercase tracking-widest transition-all shadow-xl ${(!name || !idNum) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 hover:scale-[1.02] hover:shadow-emerald-500/50'}`}
-            >
-
               <button 
   type="submit" 
   onClick={() => handleSubmit()}
@@ -226,9 +219,8 @@ const handleSubmit = async (e?: React.FormEvent) => {
   {isRegistering ? 'REGISTRANDO...' : 'OBTENER TURNO'}
 </button>
               
-              
-              OBTENER TURNO
-            </button>
+          
+  
         </div>
 
         {/* LADO DERECHO: VISUAL + TECLADO */}
