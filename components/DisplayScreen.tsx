@@ -155,41 +155,42 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
   useEffect(() => {
    const syncWithDB = async () => {
   try {
-    // Añadimos un timestamp al final de la URL para engañar al navegador y que siempre pida datos frescos
     const timestamp = new Date().getTime();
-    const response = await fetch(`${API_URL}?sheet=display&cb=${timestamp}`, {
-      method: 'GET',
-      // Eliminamos 'mode: cors' y dejamos que el navegador gestione el redirect por defecto
-      redirect: 'follow'
-    });
     
-    // Si la respuesta es opaca o da error, lo capturamos
-    if (!response.ok) {
-      console.warn("La respuesta de Google no fue OK, intentando procesar...");
-    }
+    // Usamos un proxy gratuito para saltar el bloqueo de CORS
+    // Esto hace que la petición parezca venir de un servidor y no del navegador
+    const proxyUrl = "https://corsproxy.io/?"; 
+    const targetUrl = encodeURIComponent(`${API_URL}?sheet=display&cb=${timestamp}`);
+
+    const response = await fetch(proxyUrl + targetUrl);
+    
+    if (!response.ok) throw new Error('Error en red');
 
     const data = await response.json();
     
     if (data && Array.isArray(data)) {
-      // MAPEADO DE SEGURIDAD: 
-      // Si el Excel tiene las columnas vacías o nombres distintos, esto evita que la pantalla falle
       const formattedTickets = data
-        .filter(item => item.ticket_id) // Solo procesar si hay un ID
+        .filter(item => item.ticket_id) 
         .map((item: any) => ({
-          id: String(item.ticket_id || ''),
-          number: String(item.ticket_id || ''),
-          customerName: String(item.nombre || 'Sin nombre'),
-          boxId: String(item.box || '0'),
+          id: String(item.ticket_id),
+          number: String(item.ticket_id),
+          customerName: String(item.nombre || 'En espera'),
+          boxId: String(item.box || '-'),
           timestamp: String(item.called_at || '')
         }));
 
       setLiveTickets(formattedTickets);
     }
   } catch (error) {
-    console.error("Error crítico de red:", error);
+    console.error("Error de conexión:", error);
+    // Si el proxy falla, intentamos la conexión directa como plan B
+    try {
+        const directRes = await fetch(`${API_URL}?sheet=display`);
+        const directData = await directRes.json();
+        if (directData) setLiveTickets(directData);
+    } catch (e) {}
   }
 };
-
 
 
     
