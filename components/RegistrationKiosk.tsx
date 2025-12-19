@@ -30,21 +30,25 @@ const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBac
   }, []);
 
 const handleSubmit = async (e?: React.FormEvent) => {
+  // 1. Evita que la página se recargue y borre todo
   if (e) e.preventDefault();
-  if (!name || !idNum) return;
+
+  console.log("Iniciando envío para:", name);
 
   try {
-    const result = await addTicket({
-      nombre: name,
-      servicio: service,
-      tipo: idNum
-    });
-
-    // turno REAL que viene del Google Sheet
-    setSubmitted(result.turno);
-
+    // 2. Llamamos a nuestra API (asegúrate de que el nombre coincida: sheetsApi)
+    await sheetsApi.addTicket(name, "General"); 
+    
+    console.log("¡Envío completado!");
+    alert("Turno obtenido con éxito");
+    
+    // Opcional: Limpiar los campos después de enviar
+    // setName("");
+    // setIdNum("");
+    
   } catch (error) {
-    alert('No fue posible generar el turno. Intenta nuevamente.');
+    console.error("Error al obtener turno:", error);
+    alert("Hubo un error al conectar con el servidor");
   }
 };
 
