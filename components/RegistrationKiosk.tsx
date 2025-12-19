@@ -1,4 +1,4 @@
-
+const API_URL = "https://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec";
 import React, { useState, useRef, useEffect } from 'react';
 import { ServiceType } from '../types';
 import { UserPlus, ClipboardList, Delete, X, ChevronLeft, User, Hash } from 'lucide-react';
@@ -28,27 +28,64 @@ const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBac
     }
   }, []);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!name || !idNum) return;
+  const [isRegistering, setIsRegistering] = useState(false); // Nuevo estado
+
+
+
+  
+const handleSubmit = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  if (!name || !idNum || isRegistering) return;
+
+  setIsRegistering(true); // Bloqueamos el botón
+
+  try {
+    // 1. Enviamos los datos al Excel
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Importante para evitar bloqueos de CORS en el envío
+      body: JSON.stringify({
+        action: 'REGISTER_CLIENT',
+        data: {
+          nombre: name,
+          servicio: service,
+          tipo: 'Normal' // Puedes cambiarlo si manejas prioridades
+        }
+      })
+    });
+
+    // 2. Dado que 'no-cors' no nos permite leer la respuesta directamente por seguridad,
+    // vamos a pedir el ID actualizado haciendo un pequeño fetch rápido o calculándolo.
+    // OPTIMIZACIÓN: Como el Excel es la fuente de verdad, la pantalla mostrará el número real.
     
+    // Por ahora, simularemos el éxito para la UI del cliente:
+    setSubmitted("PROCESANDO..."); 
+
+    // 3. Ejecutamos la función original de props por si acaso
     onRegister(name, service, idNum);
-    
-    setSubmitted(`${service.charAt(0).toUpperCase()}-XXX`);
-    
-    // Resetear y re-enfocar después de 3 segundos
+
+    // Resetear después del éxito
     setTimeout(() => {
       setSubmitted(null);
       setName('');
       setIdNum('');
       setService('General');
       setActiveField('id');
-      // Asegurar que el foco vuelva al ID para el siguiente usuario
+      setIsRegistering(false);
       setTimeout(() => {
-          if (idInputRef.current) idInputRef.current.focus();
+        if (idInputRef.current) idInputRef.current.focus();
       }, 100);
-    }, 3000);
-  };
+    }, 4000);
+
+  } catch (error) {
+    console.error("Error al registrar:", error);
+    alert("Hubo un problema de conexión. Intente nuevamente.");
+    setIsRegistering(false);
+  }
+};
+
+
+  
 
   const handleVirtualKey = (key: string) => {
     if (activeField === 'id') {
@@ -175,7 +212,22 @@ const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBac
             disabled={!name || !idNum}
             className={`w-full py-6 mt-4 rounded-2xl font-black text-3xl uppercase tracking-widest transition-all shadow-xl ${(!name || !idNum) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 hover:scale-[1.02] hover:shadow-emerald-500/50'}`}
             >
-            OBTENER TURNO
+
+              <button 
+  type="submit" 
+  onClick={() => handleSubmit()}
+  disabled={!name || !idNum || isRegistering} // Añadido isRegistering
+  className={`w-full py-6 mt-4 rounded-2xl font-black text-3xl uppercase tracking-widest transition-all shadow-xl ${
+    (!name || !idNum || isRegistering) 
+      ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+      : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600'
+  }`}
+>
+  {isRegistering ? 'REGISTRANDO...' : 'OBTENER TURNO'}
+</button>
+              
+              
+              OBTENER TURNO
             </button>
         </div>
 
