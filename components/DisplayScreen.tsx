@@ -33,7 +33,7 @@ const getEmbedUrl = (url: string): string => {
   if (url.includes('vimeo.com')) {
     const parts = url.split('/');
     const videoId = parts[parts.length - 1].split('?')[0];
-    return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=0&background=1&badge=0&autopause=0&player_id=0&app_id=58479`;
+    return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1&background=1&badge=0&autopause=0&player_id=0&app_id=58479`;
   }
   return url;
 };
