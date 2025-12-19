@@ -1,4 +1,4 @@
-import { sheetsApi } from '../services/sheetsApi';
+import { sheetsApi.ts } from '../services/sheetsApi';
 import React, { useState, useEffect } from 'react';
 import { useQueue } from './hooks/useQueue';
 import DisplayScreen from './components/DisplayScreen';
