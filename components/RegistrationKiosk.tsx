@@ -32,40 +32,40 @@ const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBac
 const handleSubmit = async (e?: React.FormEvent) => {
   if (e) e.preventDefault();
   
-  // ALERTA 1: ¿El botón está vivo?
-  alert("Paso 1: ¡El botón funciona!"); 
-  console.log("Datos a enviar:", { name, idNum });
+  // 1. Validación de seguridad
+  if (!name || !idNum) return;
+
+  // ALERTA PARA TI: Si ves esto, el botón ya está conectado
+  console.log("Paso 1: Iniciando proceso...");
 
   try {
-    // ALERTA 2: ¿La API está siendo llamada?
-    console.log("Paso 2: Llamando a sheetsApi...");
+    // 2. Llamamos a Google Sheets (Usamos sheetsApi que importamos arriba)
+    // Pasamos el nombre y el servicio seleccionado en el estado
+    await sheetsApi.addTicket(name, service); 
     
-    // USAMOS EL NOMBRE EXACTO QUE TIENES: sheetsApi
-    await sheetsApi.addTicket(name, "General"); 
-    
-    // ALERTA 3: ¿Terminó el proceso?
-    alert("Paso 3: ¡Proceso terminado! Revisa el Sheets ahora.");
-    
-  } catch (error) {
-    // ALERTA 4: ¿Hubo un error de código?
-    alert("ERROR CRÍTICO: " + error);
-    console.error(error);
-  }
-};
+    console.log("Paso 2: Datos enviados a Google");
 
-    // Resetear y re-enfocar después de 3 segundos
+    // 3. Solo después de que Google recibe los datos, mostramos el éxito en pantalla
+    setSubmitted(name);
+    
+    // 4. Ejecutamos la función de registro local si existe
+    onRegister(name, service, idNum);
+
+    // 5. Timer para resetear el formulario después de 3 segundos
     setTimeout(() => {
       setSubmitted(null);
       setName('');
       setIdNum('');
       setService('General');
       setActiveField('id');
-      // Asegurar que el foco vuelva al ID para el siguiente usuario
-      setTimeout(() => {
-          if (idInputRef.current) idInputRef.current.focus();
-      }, 100);
+      if (idInputRef.current) idInputRef.current.focus();
     }, 3000);
-  };
+
+  } catch (error) {
+    console.error("Error al registrar:", error);
+    alert("Error de conexión con Google Sheets");
+  }
+};
 
   const handleVirtualKey = (key: string) => {
     if (activeField === 'id') {
