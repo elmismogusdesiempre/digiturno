@@ -84,6 +84,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       { val: 'text-6xl', label: 'Gigante' },
   ];
 
+
+// 1. Agrega este estado para feedback visual
+const [isSyncing, setIsSyncing] = useState(false);
+
+// 2. Crea esta función de envío
+const syncVideoPlaylistToExcel = async (playlist: PlaylistItem[]) => {
+  setIsSyncing(true);
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Importante para Google Apps Script
+      body: JSON.stringify({
+        action: 'UPDATE_VIDEO_PLAYLIST',
+        playlist: playlist
+      })
+    });
+    
+    // También actualizamos el estado local de la app
+    onUpdateVideoPlaylist(playlist);
+    alert("¡Playlist sincronizada con éxito en la nube!");
+  } catch (error) {
+    console.error("Error sincronizando:", error);
+    alert("Error al conectar con el servidor");
+  } finally {
+    setIsSyncing(false);
+  }
+};
+
+  
   return (
     <div className="h-screen overflow-y-auto bg-slate-50 p-8">
       <div className="max-w-5xl mx-auto pb-20">
@@ -180,6 +209,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <button onClick={() => addPlaylistInput(setVideoInputs, videoInputs, 60)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-slate-500 hover:text-red-600 transition-colors">
                             <Plus className="w-4 h-4" /> Agregar Video
                         </button>
+
+                      
                     </div>
                     <button onClick={() => onUpdateVideoPlaylist(videoInputs.filter(u => u.url))} className="w-full bg-red-600 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-lg shadow-red-200 hover:shadow-red-300 transition-all active:scale-[0.98]">
                         Establecer Playlist de Video
