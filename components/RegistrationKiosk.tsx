@@ -1,140 +1,262 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { sheetsApi } from './services/sheetsApi';
-import { UserPlus, ClipboardList, Delete, ChevronLeft, User, Hash } from 'lucide-react';
+import { ServiceType } from '../types';
+import { UserPlus, ClipboardList, Delete, X, ChevronLeft, User, Hash } from 'lucide-react';
 
 interface RegistrationKioskProps {
-  onRegister: (name: string, service: any, idNum: string) => void;
+  onRegister: (name: string, service: ServiceType, idNum: string) => void;
   onBack: () => void;
 }
 
 const RegistrationKiosk: React.FC<RegistrationKioskProps> = ({ onRegister, onBack }) => {
   const [name, setName] = useState('');
   const [idNum, setIdNum] = useState('');
-  const [service, setService] = useState('General');
+  const [service, setService] = useState<ServiceType>('General');
   const [submitted, setSubmitted] = useState<string | null>(null);
+  
+  // Estado para saber qué campo se está editando ('id' o 'name') para mostrar el teclado correcto
   const [activeField, setActiveField] = useState<'id' | 'name'>('id');
   
+  // Referencias para manejar el foco
   const idInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-foco inicial
   useEffect(() => {
-    idInputRef.current?.focus();
+    if (idInputRef.current) {
+        idInputRef.current.focus();
+    }
   }, []);
 
-  // FUNCIÓN DE ENVÍO CORREGIDA
-  const ejecutarEnvio = async () => {
-    console.log("Botón presionado. Datos:", { name, idNum, service });
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!name || !idNum) return;
     
-    // Si los campos están vacíos por error de teclado, mandamos un genérico para probar
-    const nombreFinal = name || "ANONIMO";
-    const idFinal = idNum || "000";
-
-    try {
-      // Intentamos el envío
-      await sheetsApi.addTicket(nombreFinal, service);
-      
-      // Si llegamos aquí, mostramos éxito en pantalla
-      setSubmitted(nombreFinal);
-      onRegister(nombreFinal, service as any, idFinal);
-
-      // Reset automático en 3 segundos
+    onRegister(name, service, idNum);
+    
+    setSubmitted(`${service.charAt(0).toUpperCase()}-XXX`);
+    
+    // Resetear y re-enfocar después de 3 segundos
+    setTimeout(() => {
+      setSubmitted(null);
+      setName('');
+      setIdNum('');
+      setService('General');
+      setActiveField('id');
+      // Asegurar que el foco vuelva al ID para el siguiente usuario
       setTimeout(() => {
-        setSubmitted(null);
-        setName('');
-        setIdNum('');
-        setActiveField('id');
-      }, 3000);
-
-    } catch (error) {
-      alert("Error enviando datos: " + error);
-    }
+          if (idInputRef.current) idInputRef.current.focus();
+      }, 100);
+    }, 3000);
   };
 
   const handleVirtualKey = (key: string) => {
     if (activeField === 'id') {
-      if (key === 'DEL') setIdNum(prev => prev.slice(0, -1));
-      else if (key === 'CLR') setIdNum('');
-      else if (idNum.length < 15) setIdNum(prev => prev + key);
+        if (key === 'DEL') setIdNum(prev => prev.slice(0, -1));
+        else if (key === 'CLR') setIdNum('');
+        else if (idNum.length < 15) setIdNum(prev => prev + key);
+        // Mantener foco
+        idInputRef.current?.focus();
     } else {
-      if (key === 'DEL') setName(prev => prev.slice(0, -1));
-      else if (key === 'SPACE') setName(prev => prev + ' ');
-      else setName(prev => (prev + key).toUpperCase());
+        if (key === 'DEL') setName(prev => prev.slice(0, -1));
+        else if (key === 'SPACE') setName(prev => prev + ' ');
+        else setName(prev => prev + key);
+        // Mantener foco
+        nameInputRef.current?.focus();
     }
   };
 
+  // Teclados Virtuales
   const numPad = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'CLR', '0', 'DEL'];
-  const alphaRows = [['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L','Ñ'],['Z','X','C','V','B','N','M']];
+  const alphaRows = [
+      ['Q','W','E','R','T','Y','U','I','O','P'],
+      ['A','S','D','F','G','H','J','K','L','Ñ'],
+      ['Z','X','C','V','B','N','M']
+  ];
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-emerald-50 p-8">
-        <div className="bg-white p-16 rounded-[3rem] shadow-2xl text-center max-w-2xl w-full">
-          <div className="w-32 h-32 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-10">
+      <div className="flex flex-col items-center justify-center h-screen bg-emerald-50 text-emerald-900 p-8 animate-in fade-in zoom-in duration-300">
+        <div className="bg-white p-16 rounded-[3rem] shadow-2xl text-center border-4 border-emerald-100 max-w-2xl w-full">
+          <div className="w-32 h-32 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-10 animate-bounce">
             <ClipboardList className="w-16 h-16 text-emerald-600" />
           </div>
-          <h2 className="text-5xl font-black mb-6 text-emerald-800">¡REGISTRADO!</h2>
-          <p className="text-2xl text-emerald-700">Espere su turno en la pantalla.</p>
+          <h2 className="text-5xl font-black mb-6 text-emerald-800">¡Registro Exitoso!</h2>
+          <p className="text-3xl font-medium text-emerald-700/80 mb-8">Por favor tome asiento.</p>
+          <div className="w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
+             <div className="h-full bg-emerald-500 animate-[width_3s_linear_forwards]" style={{width: '0%'}}></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
-      <div className="bg-white px-8 py-4 shadow flex items-center justify-between">
-        <button onClick={onBack} className="text-slate-500 font-bold flex items-center gap-2">
-          <ChevronLeft /> Volver
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+      {/* Header Simplificado */}
+      <div className="bg-white px-8 py-4 shadow-sm flex items-center justify-between z-10">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 px-4 py-2 rounded-xl hover:bg-slate-50 transition-all font-bold text-lg">
+            <ChevronLeft className="w-5 h-5" /> Volver
         </button>
-        <div className="flex items-center gap-2 text-indigo-600 font-black">
-          <UserPlus /> AUTO REGISTRO
+        <div className="flex items-center gap-2 text-indigo-600">
+            <UserPlus className="w-6 h-6" />
+            <span className="text-xl font-black tracking-tight uppercase">AUTO REGISTRO</span>
         </div>
-        <div className="w-20"></div>
+        <div className="w-24"></div> {/* Spacer */}
       </div>
 
-      <div className="flex-1 flex gap-6 p-6 overflow-hidden">
-        {/* IZQUIERDA: FORMULARIO */}
-        <div className="w-1/2 bg-white rounded-[2rem] p-8 shadow-xl flex flex-col">
-          <div className="space-y-6 flex-1">
-            <div onClick={() => setActiveField('id')} className={`p-6 rounded-2xl border-2 ${activeField === 'id' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100'}`}>
-              <label className="text-xs font-bold text-slate-400 uppercase">1. Identificación</label>
-              <input ref={idInputRef} value={idNum} readOnly className="w-full text-5xl font-black bg-transparent outline-none" />
-            </div>
-
-            <div onClick={() => setActiveField('name')} className={`p-6 rounded-2xl border-2 ${activeField === 'name' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100'}`}>
-              <label className="text-xs font-bold text-slate-400 uppercase">2. Nombre</label>
-              <input ref={nameInputRef} value={name} readOnly className="w-full text-4xl font-black bg-transparent outline-none uppercase" />
-            </div>
-
-            <div className="flex flex-col gap-4">
-               <button onClick={() => setService('General')} className={`p-6 rounded-2xl font-bold text-xl border-2 ${service === 'General' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white'}`}>Consulta General</button>
-               <button onClick={() => setService('Commercial')} className={`p-6 rounded-2xl font-bold text-xl border-2 ${service === 'Commercial' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white'}`}>Asesor Comercial</button>
-            </div>
-          </div>
-
-          <button 
-            type="button" 
-            onClick={ejecutarEnvio}
-            className="w-full py-8 mt-6 bg-emerald-500 text-white rounded-2xl font-black text-3xl shadow-lg hover:bg-emerald-600 active:scale-95 transition-all"
-          >
-            OBTENER TURNO
-          </button>
-        </div>
-
-        {/* DERECHA: TECLADO */}
-        <div className="w-1/2 bg-slate-200 rounded-[2rem] p-6 flex flex-col">
-           <div className="flex-1 flex items-center justify-center text-slate-400">
-              {activeField === 'id' ? <Hash size={100} /> : <User size={100} />}
-           </div>
-           <div className="grid grid-cols-3 gap-3">
-              {activeField === 'id' ? 
-                numPad.map(k => <button key={k} onClick={() => handleVirtualKey(k)} className="h-20 bg-white rounded-xl text-3xl font-black shadow-sm">{k}</button>) :
-                <div className="col-span-3 flex flex-col gap-2">
-                   {alphaRows.map((r, i) => <div key={i} className="flex gap-2 justify-center">{r.map(c => <button key={c} onClick={() => handleVirtualKey(c)} className="flex-1 h-16 bg-white rounded-lg font-bold">{c}</button>)}</div>)}
-                   <div className="flex gap-2"><button onClick={() => handleVirtualKey('SPACE')} className="flex-[3] h-16 bg-white rounded-lg font-bold">ESPACIO</button><button onClick={() => handleVirtualKey('DEL')} className="flex-1 h-16 bg-red-100 text-red-500 rounded-lg font-bold">BORRAR</button></div>
+      <div className="flex-1 flex gap-6 p-6 overflow-hidden h-[calc(100vh-80px)]">
+        
+        {/* LADO IZQUIERDO: FORMULARIO */}
+        <div className="w-1/2 bg-white rounded-[2rem] shadow-xl border border-slate-200 p-8 flex flex-col overflow-y-auto relative">
+            <div className="flex-1 flex flex-col gap-6">
+                
+                {/* Campo Identificación */}
+                <div 
+                    className={`transition-all duration-200 p-6 rounded-2xl border-2 cursor-pointer ${activeField === 'id' ? 'bg-indigo-50/50 border-indigo-500 shadow-lg ring-4 ring-indigo-50' : 'bg-white border-slate-200 hover:border-slate-300'}`}
+                    onClick={() => { setActiveField('id'); idInputRef.current?.focus(); }}
+                >
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">1. Número de Identificación</label>
+                    <input 
+                        ref={idInputRef}
+                        type="text" 
+                        value={idNum} 
+                        onChange={e => setIdNum(e.target.value)}
+                        onFocus={() => setActiveField('id')}
+                        className="w-full bg-transparent text-6xl font-black text-slate-900 outline-none placeholder:text-slate-200 tracking-wider"
+                        placeholder="123"
+                        readOnly={true} 
+                    />
                 </div>
-              }
-           </div>
+                
+                {/* Campo Nombre */}
+                <div 
+                    className={`transition-all duration-200 p-6 rounded-2xl border-2 cursor-pointer ${activeField === 'name' ? 'bg-indigo-50/50 border-indigo-500 shadow-lg ring-4 ring-indigo-50' : 'bg-white border-slate-200 hover:border-slate-300'}`}
+                    onClick={() => { setActiveField('name'); nameInputRef.current?.focus(); }}
+                >
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">2. Nombre Completo</label>
+                    <input 
+                        ref={nameInputRef}
+                        type="text" 
+                        value={name} 
+                        onChange={e => setName(e.target.value)}
+                        onFocus={() => setActiveField('name')}
+                        className="w-full bg-transparent text-5xl font-black text-slate-900 outline-none placeholder:text-slate-200 uppercase truncate"
+                        placeholder="SU NOMBRE"
+                        readOnly={true}
+                    />
+                </div>
+
+                {/* Selección Servicio */}
+                <div className="flex-1">
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">3. Tipo de Servicio</label>
+                    <div className="flex flex-col gap-4">
+                        <button
+                        type="button"
+                        onClick={() => setService('General')}
+                        className={`rounded-2xl border-2 font-bold text-2xl p-6 transition-all flex items-center justify-start shadow-sm ${service === 'General' ? 'border-indigo-600 bg-indigo-600 text-white shadow-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                        >
+                        Consulta General
+                        </button>
+                        <button
+                        type="button"
+                        onClick={() => setService('Commercial')}
+                        className={`rounded-2xl border-2 font-bold text-2xl p-6 transition-all flex items-center justify-start shadow-sm ${service === 'Commercial' ? 'border-indigo-600 bg-indigo-600 text-white shadow-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                        >
+                        Asesor Comercial
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button 
+            type="submit" 
+            onClick={() => handleSubmit()}
+            disabled={!name || !idNum}
+            className={`w-full py-6 mt-4 rounded-2xl font-black text-3xl uppercase tracking-widest transition-all shadow-xl ${(!name || !idNum) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 hover:scale-[1.02] hover:shadow-emerald-500/50'}`}
+            >
+            OBTENER TURNO
+            </button>
         </div>
+
+        {/* LADO DERECHO: VISUAL + TECLADO */}
+        <div className="w-1/2 bg-slate-200 rounded-[2rem] p-6 flex flex-col shadow-inner border border-white/50 relative overflow-hidden">
+            
+            {/* ÁREA SUPERIOR: ICONO GIGANTE */}
+            <div className="flex-1 flex items-center justify-center relative min-h-0">
+                 {/* Fondo decorativo sutil */}
+                 <div className="absolute w-[120%] h-[120%] bg-white/20 blur-3xl rounded-full pointer-events-none"></div>
+
+                 {activeField === 'name' ? (
+                     <User className="w-48 h-48 text-slate-400/80 drop-shadow-sm animate-in zoom-in duration-300 relative z-10" strokeWidth={1} />
+                 ) : (
+                     <Hash className="w-48 h-48 text-slate-400/80 drop-shadow-sm animate-in zoom-in duration-300 relative z-10" strokeWidth={1} />
+                 )}
+                 
+                 <div className="absolute bottom-4 left-0 right-0 text-center">
+                    <span className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em]">
+                        Teclado Virtual {activeField === 'id' ? 'Numérico' : 'Alfabético'}
+                    </span>
+                 </div>
+            </div>
+
+            {/* ÁREA INFERIOR: TECLADO */}
+            <div className="mt-4 z-20">
+                {activeField === 'id' ? (
+                    // TECLADO NUMÉRICO - MÁS GRANDE
+                    <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto">
+                        {numPad.map((key) => (
+                            <button
+                                key={key}
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleVirtualKey(key)}
+                                className={`h-32 rounded-3xl shadow-[0_6px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[6px] border-b-[8px] text-6xl font-black transition-all flex items-center justify-center
+                                    ${key === 'DEL' ? 'bg-red-50 text-red-500 border-red-200' : 
+                                    key === 'CLR' ? 'bg-orange-50 text-orange-500 border-orange-200' : 
+                                    'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                            >
+                                {key === 'DEL' ? <Delete className="w-14 h-14" /> : key}
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    // TECLADO ALFABÉTICO (QWERTY) - MÁS GRANDE
+                    <div className="flex flex-col gap-3">
+                        {alphaRows.map((row, i) => (
+                            <div key={i} className="flex gap-3 justify-center w-full">
+                                {row.map(char => (
+                                    <button
+                                        key={char}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => handleVirtualKey(char)}
+                                        className="flex-1 h-24 bg-white rounded-2xl shadow-[0_5px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[5px] border-b-[6px] border-slate-200 text-4xl font-black text-slate-700 hover:bg-slate-50 transition-all min-w-[3rem]"
+                                    >
+                                        {char}
+                                    </button>
+                                ))}
+                            </div>
+                        ))}
+                        <div className="flex gap-3 w-full mt-2 px-4">
+                             <button 
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleVirtualKey('SPACE')}
+                                className="flex-[4] h-24 bg-white rounded-2xl shadow-[0_5px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[5px] border-b-[6px] border-slate-200 text-2xl font-black text-slate-500 hover:bg-slate-50 transition-all uppercase tracking-widest"
+                             >
+                                ESPACIO
+                             </button>
+                             <button 
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleVirtualKey('DEL')}
+                                className="flex-1 h-24 bg-red-100 rounded-2xl shadow-[0_5px_0_0_rgba(254,202,202,1)] active:shadow-none active:translate-y-[5px] border-b-[6px] border-red-200 flex items-center justify-center text-red-500 hover:bg-red-200 transition-all"
+                             >
+                                <Delete className="w-10 h-10" />
+                             </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+
       </div>
     </div>
   );
