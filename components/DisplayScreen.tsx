@@ -155,32 +155,44 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
   useEffect(() => {
    const syncWithDB = async () => {
   try {
-    // Añadimos parámetros para evitar el bloqueo y seguir la redirección de Google
-    const response = await fetch(`${API_URL}?sheet=display`, {
+    // Añadimos un timestamp al final de la URL para engañar al navegador y que siempre pida datos frescos
+    const timestamp = new Date().getTime();
+    const response = await fetch(`${API_URL}?sheet=display&cb=${timestamp}`, {
       method: 'GET',
-      mode: 'cors', // Forzamos modo CORS
-      redirect: 'follow' // ¡ESTO ES LO MÁS IMPORTANTE!
+      // Eliminamos 'mode: cors' y dejamos que el navegador gestione el redirect por defecto
+      redirect: 'follow'
     });
     
-    if (!response.ok) throw new Error('Respuesta no exitosa');
-    
+    // Si la respuesta es opaca o da error, lo capturamos
+    if (!response.ok) {
+      console.warn("La respuesta de Google no fue OK, intentando procesar...");
+    }
+
     const data = await response.json();
     
     if (data && Array.isArray(data)) {
-      const formattedTickets: Ticket[] = data.map((item: any) => ({
-        id: item.ticket_id.toString(),
-        number: item.ticket_id.toString(),
-        customerName: item.nombre,
-        boxId: item.box.toString(),
-        timestamp: item.called_at
-      }));
+      // MAPEADO DE SEGURIDAD: 
+      // Si el Excel tiene las columnas vacías o nombres distintos, esto evita que la pantalla falle
+      const formattedTickets = data
+        .filter(item => item.ticket_id) // Solo procesar si hay un ID
+        .map((item: any) => ({
+          id: String(item.ticket_id || ''),
+          number: String(item.ticket_id || ''),
+          customerName: String(item.nombre || 'Sin nombre'),
+          boxId: String(item.box || '0'),
+          timestamp: String(item.called_at || '')
+        }));
+
       setLiveTickets(formattedTickets);
     }
   } catch (error) {
-    console.error("Error de sincronización:", error);
+    console.error("Error crítico de red:", error);
   }
 };
 
+
+
+    
     const interval = setInterval(syncWithDB, 3000);
     return () => clearInterval(interval);
   }, []);
