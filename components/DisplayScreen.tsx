@@ -155,7 +155,7 @@ const DisplayScreen: React.FC<DisplayScreenProps> = ({
   useEffect(() => {
     const syncWithDB = async () => {
       try {
-        const response = await fetch(`${https://script.google.com/macros/s/AKfycbweqXCiIR8joddOa0rGZwQ4NPCMtn47clC89um3HIYLBC_amJOe7tQwKX4cs_5PugdF/exec}?sheet=display`);
+        const response = await fetch(`${API_URL}?sheet=display`);
         const data = await response.json();
         
         if (data && Array.isArray(data)) {
